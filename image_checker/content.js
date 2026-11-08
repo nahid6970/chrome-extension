@@ -365,23 +365,32 @@ function runExtension() {
             font: '13px Arial, sans-serif'
         });
         const choices = [
-            ['check', '✓  Check', currentSettings.checkmarkColor],
-            ['cross', '✕  Cross', '#e53935'],
-            ['youtube', '▶  YouTube', '#ff0000'],
-            ['waiting', '⏳  Waiting', '#ff9800'],
-            ['question', '?  Unknown', '#7e57c2'],
-            ['off', 'Clear status', '#444']
+            ['check', '✓', 'Check', currentSettings.checkmarkColor],
+            ['cross', '✕', 'Cross', '#e53935'],
+            ['youtube', '▶', 'YouTube', '#ff0000'],
+            ['waiting', '◷', 'Waiting', '#ff9800'],
+            ['question', '?', 'Unknown', '#7e57c2'],
+            ['off', '', 'Clear status', '#444']
         ];
-        choices.forEach(([status, label, color]) => {
+        choices.forEach(([status, icon, label, color]) => {
             const option = document.createElement('button');
             option.type = 'button';
-            option.textContent = label;
+            const iconSlot = document.createElement('span');
+            iconSlot.textContent = icon;
+            const labelText = document.createElement('span');
+            labelText.textContent = label;
+            option.append(iconSlot, labelText);
             Object.assign(option.style, {
-                display: 'block', width: '100%', padding: '8px 10px',
+                display: 'flex', alignItems: 'center', width: '100%', padding: '8px 10px',
                 border: '0', borderRadius: '4px', margin: '2px 0',
                 background: getItemStatus(id) === status ? color : 'transparent',
                 color: '#fff', textAlign: 'left', cursor: 'pointer',
                 font: 'inherit'
+            });
+            Object.assign(iconSlot.style, {
+                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                width: '18px', flex: '0 0 18px', marginRight: '4px',
+                fontFamily: 'Arial, sans-serif', fontSize: '14px', lineHeight: '16px'
             });
             option.addEventListener('mouseenter', () => { option.style.background = color; });
             option.addEventListener('mouseleave', () => {
@@ -470,7 +479,7 @@ function runExtension() {
         checkmark.innerHTML = 
             status === 'cross' ? '✕' : 
             status === 'youtube' ? '▶' : 
-            status === 'waiting' ? '⏳' :
+            status === 'waiting' ? '◷' :
             status === 'question' ? '?' : '✓';
         checkmark.classList.toggle('ic-cross', status === 'cross');
         checkmark.classList.toggle('ic-youtube', status === 'youtube');
@@ -623,7 +632,7 @@ function runExtension() {
             status === 'check' ? '✓' : 
             status === 'cross' ? '✕' : 
             status === 'youtube' ? '▶' : 
-            status === 'waiting' ? '⏳' :
+            status === 'waiting' ? '◷' :
             status === 'question' ? '?' : '';
         button.title = 
             status === 'off' ? 'Mark item' :
