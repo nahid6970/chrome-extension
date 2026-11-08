@@ -349,7 +349,8 @@ function runExtension() {
         const nextStatus = currentStatus === 'off' ? 'check' :
             currentStatus === 'check' ? 'cross' :
             currentStatus === 'cross' ? 'youtube' :
-            currentStatus === 'youtube' ? 'waiting' : 'off';
+            currentStatus === 'youtube' ? 'waiting' :
+            currentStatus === 'waiting' ? 'question' : 'off';
         setItemStatus(id, nextStatus);
         refreshEditButtons();
     }
@@ -392,10 +393,12 @@ function runExtension() {
         checkmark.innerHTML = 
             status === 'cross' ? '✕' : 
             status === 'youtube' ? '▶' : 
-            status === 'waiting' ? '⏳' : '✓';
+            status === 'waiting' ? '⏳' :
+            status === 'question' ? '?' : '✓';
         checkmark.classList.toggle('ic-cross', status === 'cross');
         checkmark.classList.toggle('ic-youtube', status === 'youtube');
         checkmark.classList.toggle('ic-waiting', status === 'waiting');
+        checkmark.classList.toggle('ic-question', status === 'question');
         checkmark.dataset.forId = id;
         checkmark.dataset.ownerId = id; // Reference to owner
 
@@ -427,6 +430,7 @@ function runExtension() {
                 status === 'cross' ? '#e53935' : 
                 status === 'youtube' ? '#ff0000' : 
                 status === 'waiting' ? '#ff9800' : 
+                status === 'question' ? '#7e57c2' :
                 s.checkmarkColor,
             color: s.textColor,
             borderRadius: '50%',
@@ -542,12 +546,14 @@ function runExtension() {
             status === 'check' ? '✓' : 
             status === 'cross' ? '✕' : 
             status === 'youtube' ? '▶' : 
-            status === 'waiting' ? '⏳' : '';
+            status === 'waiting' ? '⏳' :
+            status === 'question' ? '?' : '';
         button.title = 
             status === 'off' ? 'Mark item' :
             status === 'check' ? 'Mark as cross' : 
             status === 'cross' ? 'Mark as YouTube' : 
-            status === 'youtube' ? 'Mark as waiting' : 'Clear status';
+            status === 'youtube' ? 'Mark as waiting' :
+            status === 'waiting' ? 'Mark as unknown' : 'Clear status';
         button.dataset.forId = id;
 
         Object.assign(button.style, {
@@ -561,6 +567,7 @@ function runExtension() {
                 status === 'cross' ? '#e53935' : 
                 status === 'youtube' ? '#ff0000' : 
                 status === 'waiting' ? '#ff9800' : 
+                status === 'question' ? '#7e57c2' :
                 currentSettings.checkmarkColor
             }`,
             borderRadius: '6px',
@@ -569,6 +576,7 @@ function runExtension() {
                 status === 'cross' ? '#e53935' : 
                 status === 'youtube' ? '#ff0000' : 
                 status === 'waiting' ? '#ff9800' : 
+                status === 'question' ? '#7e57c2' :
                 'rgba(0, 0, 0, 0.65)',
             color: currentSettings.textColor,
             fontSize: '20px',
