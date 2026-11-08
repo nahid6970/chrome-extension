@@ -270,6 +270,7 @@ function runExtension() {
         // Add listeners only once
         if (element.dataset.icListenersAdded !== 'true') {
             element.addEventListener('click', handleContentClick, true);
+            element.addEventListener('contextmenu', handleContentContextMenu, true);
             element.addEventListener('mouseenter', handleMouseEnter);
             element.addEventListener('mouseleave', handleMouseLeave);
             element.dataset.icListenersAdded = 'true';
@@ -339,6 +340,82 @@ function runExtension() {
         event.stopPropagation();
 
         toggleElementSeen(event.currentTarget);
+    }
+
+    function handleContentContextMenu(event) {
+        if (!checkingMode) return;
+        event.preventDefault();
+        event.stopPropagation();
+        showStatusMenu(event.currentTarget, event.clientX, event.clientY);
+    }
+
+    function showStatusMenu(element, x, y) {
+        document.querySelector('.ic-status-menu')?.remove();
+        const id = element?.dataset?.icContentId;
+        if (!id) return;
+
+        const menu = document.createElement('div');
+        menu.className = 'ic-status-menu';
+        Object.assign(menu.style, {
+            position: 'fixed', top: `${Math.min(y, innerHeight - 220)}px`,
+            left: `${Math.min(x, innerWidth - 180)}px`, zIndex: '2147483647',
+            minWidth: '160px', padding: '5px', background: '#202124',
+            border: '1px solid #555', borderRadius: '6px',
+            boxShadow: '0 4px 14px rgba(0,0,0,.55)', color: '#fff',
+            font: '13px Arial, sans-serif'
+        });
+        const choices = [
+            ['check', '✓  Check', currentSettings.checkmarkColor],
+            ['cross', '✕  Cross', '#e53935'],
+            ['youtube', '▶  YouTube', '#ff0000'],
+            ['waiting', '⏳  Waiting', '#ff9800'],
+            ['question', '?  Unknown', '#7e57c2'],
+            ['off', 'Clear status', '#444']
+        ];
+        choices.forEach(([status, label, color]) => {
+            const option = document.createElement('button');
+            option.type = 'button';
+            option.textContent = label;
+            Object.assign(option.style, {
+                display: 'block', width: '100%', padding: '8px 10px',
+                border: '0', borderRadius: '4px', margin: '2px 0',
+                background: getItemStatus(id) === status ? color : 'transparent',
+                color: '#fff', textAlign: 'left', cursor: 'pointer',
+                font: 'inherit'
+            });
+            option.addEventListener('mouseenter', () => { option.style.background = color; });
+            option.addEventListener('mouseleave', () => {
+                option.style.background = getItemStatus(id) === status ? color : 'transparent';
+            });
+            option.addEventListener('click', click => {
+                click.preventDefault();
+                click.stopPropagation();
+                setItemStatus(id, status);
+                refreshEditButtons();
+                menu.remove();
+            });
+            menu.appendChild(option);
+        });
+        menu.addEventListener('contextmenu', event => event.preventDefault());
+        document.body.appendChild(menu);
+        const dismiss = event => {
+            if (!menu.contains(event.target)) {
+                menu.remove();
+                document.removeEventListener('pointerdown', dismiss, true);
+                document.removeEventListener('keydown', escape, true);
+            }
+        };
+        const escape = event => {
+            if (event.key === 'Escape') {
+                menu.remove();
+                document.removeEventListener('pointerdown', dismiss, true);
+                document.removeEventListener('keydown', escape, true);
+            }
+        };
+        setTimeout(() => {
+            document.addEventListener('pointerdown', dismiss, true);
+            document.addEventListener('keydown', escape, true);
+        }, 0);
     }
 
     function toggleElementSeen(element) {
