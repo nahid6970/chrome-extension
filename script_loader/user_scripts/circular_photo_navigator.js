@@ -19,10 +19,8 @@
   let refreshTimer = 0;
   let host;
   let shadow;
-  let count;
-  let previousButton;
-  let nextButton;
-  let groupCount;
+  let circularList;
+  let renderedGroupKeys = [];
 
   function sourceGroupKey(image) {
     const fileName = new URL(image.currentSrc || image.src, location.href).pathname.split('/').pop() || '';
@@ -50,7 +48,8 @@
       const key = circularHeading || sourceGroupKey(image);
       let group = nextGroups.find(entry => entry.key === key);
       if (!group) {
-        group = { key, images: [] };
+        const headingLabel = circularHeading?.innerText?.trim() || circularHeading?.textContent?.trim();
+        group = { key, label: headingLabel || image.alt?.trim() || 'Job circular', images: [] };
         nextGroups.push(group);
       }
       group.images.push(image);
@@ -60,16 +59,36 @@
     return groups;
   }
 
+  function renderCircularList() {
+    const keysChanged = groups.length !== renderedGroupKeys.length
+      || groups.some((group, index) => group.key !== renderedGroupKeys[index]);
+    if (!keysChanged) return;
+
+    circularList.replaceChildren();
+    renderedGroupKeys = groups.map(group => group.key);
+    groups.forEach((group, index) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.id = `circular-jump-${index + 1}`;
+      button.className = 'circular-item';
+      button.dataset.testid = 'circular-jump';
+      button.dataset.groupIndex = String(index);
+      button.textContent = group.label;
+      button.title = group.label;
+      button.setAttribute('aria-label', `Go to ${group.label}`);
+      button.addEventListener('click', () => jumpToCircular(index));
+      circularList.appendChild(button);
+    });
+  }
+
   function updateControls() {
-    if (!count || !groupCount || !previousButton || !nextButton) return;
-    const group = groups[currentGroupIndex];
+    if (!circularList) return;
     const total = groups.reduce((sum, entry) => sum + entry.images.length, 0);
-    const photoTotal = group?.images.length || 0;
-    count.textContent = photoTotal ? `${currentIndex + 1} / ${photoTotal}` : '0 / 0';
-    groupCount.textContent = groups.length ? `Circular ${currentGroupIndex + 1} / ${groups.length}` : 'No photos';
-    count.title = group ? `Photo ${currentIndex + 1} of ${photoTotal} in circular ${currentGroupIndex + 1} of ${groups.length}` : 'No circular photos found';
-    previousButton.disabled = total < 2;
-    nextButton.disabled = total < 2;
+    renderCircularList();
+    circularList.querySelectorAll('.circular-item').forEach((button, index) => {
+      if (index === currentGroupIndex) button.setAttribute('aria-current', 'location');
+      else button.removeAttribute('aria-current');
+    });
     host.style.setProperty('display', total ? 'block' : 'none', 'important');
   }
 
@@ -129,21 +148,11 @@
     scrollFrame = window.requestAnimationFrame(syncCurrentFromScroll);
   }
 
-  function goToImage(direction) {
+  function jumpToCircular(index) {
     refreshImages();
-    if (groups.length < 1) return;
-
-    const currentGroup = groups[currentGroupIndex];
-    const nextPhotoIndex = currentIndex + direction;
-    if (nextPhotoIndex < 0) {
-      currentGroupIndex = (currentGroupIndex - 1 + groups.length) % groups.length;
-      currentIndex = groups[currentGroupIndex].images.length - 1;
-    } else if (nextPhotoIndex >= currentGroup.images.length) {
-      currentGroupIndex = (currentGroupIndex + 1) % groups.length;
-      currentIndex = 0;
-    } else {
-      currentIndex = nextPhotoIndex;
-    }
+    if (!groups.length || !groups[index]) return;
+    currentGroupIndex = index;
+    currentIndex = 0;
     updateControls();
     groups[currentGroupIndex].images[currentIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
@@ -152,12 +161,7 @@
     if (document.getElementById(HOST_ID)) {
       host = document.getElementById(HOST_ID);
       shadow = host.shadowRoot;
-      if (shadow) {
-        count = shadow.getElementById('photo-count');
-        groupCount = shadow.getElementById('circular-count');
-        previousButton = shadow.getElementById('previous-photo');
-        nextButton = shadow.getElementById('next-photo');
-      }
+      if (shadow) circularList = shadow.getElementById('circular-name-list');
       return;
     }
 
@@ -167,7 +171,8 @@
     host.setAttribute('style',
       'all:initial!important;position:fixed!important;right:14px!important;top:50%!important;' +
       'transform:translateY(-50%)!important;z-index:2147483647!important;' +
-      'width:92px!important;display:none!important;pointer-events:none!important;'
+      'width:236px!important;max-width:calc(100vw - 24px)!important;' +
+      'display:none!important;pointer-events:none!important;'
     );
 
     shadow = host.attachShadow({ mode: 'open' });
@@ -175,58 +180,47 @@
       <style>
         :host { all: initial; }
         .controls {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 7px;
-          padding: 7px 5px;
+          display: block;
+          max-height: min(72vh, 620px);
+          overflow-y: auto;
+          padding: 8px;
           border: 1px solid rgba(255,255,255,.2);
-          border-radius: 24px;
+          border-radius: 10px;
           background: rgba(24, 28, 34, .92);
           box-shadow: 0 3px 14px rgba(0,0,0,.35);
-          color: #fff;
-          font: 600 11px/1 system-ui, sans-serif;
           pointer-events: auto;
           backdrop-filter: blur(8px);
         }
-        button {
+        .circular-list { display: flex; flex-direction: column; gap: 5px; }
+        .circular-item {
           all: unset;
           display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 36px;
-          height: 36px;
+          align-items: flex-start;
+          width: 100%;
+          min-height: 38px;
           box-sizing: border-box;
-          border-radius: 50%;
-          background: #1677c8;
-          color: white;
+          padding: 9px 10px;
+          border-radius: 6px;
+          background: rgba(255,255,255,.08);
+          color: #f3f6fa;
           cursor: pointer;
-          font: 24px/1 system-ui, sans-serif;
-          text-align: center;
-          user-select: none;
-          transition: background .15s ease, transform .15s ease;
+          font: 500 12px/1.4 system-ui, sans-serif;
+          text-align: left;
+          overflow-wrap: anywhere;
+          transition: background .15s ease, color .15s ease;
         }
-        button:hover { background: #0d5fa5; transform: scale(1.07); }
-        button:focus-visible { outline: 2px solid white; outline-offset: 2px; }
-        button:disabled { cursor: default; opacity: .5; }
-        button:disabled:hover { transform: none; }
-        #photo-count { min-width: 34px; text-align: center; white-space: nowrap; }
-        #circular-count { font-size: 9px; white-space: nowrap; color: #b8dfff; }
+        .circular-item:hover { background: rgba(22,119,200,.42); }
+        .circular-item[aria-current="location"] { background: #1677c8; color: white; }
+        .circular-item:focus-visible { outline: 2px solid white; outline-offset: 1px; }
+        .controls::-webkit-scrollbar { width: 6px; }
+        .controls::-webkit-scrollbar-thumb { background: rgba(255,255,255,.35); border-radius: 6px; }
       </style>
-      <nav class="controls" id="circular-photo-controls" aria-label="Circular photo navigation">
-        <button id="previous-photo" type="button" aria-label="Previous circular photo" title="Previous photo">‹</button>
-        <span id="photo-count" aria-live="polite">0 / 0</span>
-        <span id="circular-count" aria-label="Circular position">Circular 0 / 0</span>
-        <button id="next-photo" type="button" aria-label="Next circular photo" title="Next photo">›</button>
+      <nav class="controls" id="circular-photo-controls" aria-label="Job circulars">
+        <div class="circular-list" id="circular-name-list"></div>
       </nav>
     `;
 
-    count = shadow.getElementById('photo-count');
-    groupCount = shadow.getElementById('circular-count');
-    previousButton = shadow.getElementById('previous-photo');
-    nextButton = shadow.getElementById('next-photo');
-    previousButton.addEventListener('click', () => goToImage(-1));
-    nextButton.addEventListener('click', () => goToImage(1));
+    circularList = shadow.getElementById('circular-name-list');
     document.documentElement.appendChild(host);
   }
 
