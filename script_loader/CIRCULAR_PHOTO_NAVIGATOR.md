@@ -34,11 +34,17 @@ The script:
 4. Adds a fixed, always-visible list at the right center of the page. Each row uses the circular heading as its name. Clicking a row scrolls smoothly to that circular’s first image.
 5. Highlights the circular whose photo is nearest the viewport center as the reader scrolls.
 6. Watches for page changes so dynamically inserted or removed photos can update the list.
-7. Lets the user right-click a circular name and choose **Can apply** (green) or **Cannot apply** (muted red, with the name struck through). Until the user chooses, the row keeps its original neutral appearance. Selected statuses are stored in `chrome.storage.local` under `circularApplyStatuses` and follow a circular identity derived from its normalized title and first image filename.
+7. Lets the user right-click a circular name to open a compact, horizontal, icon-only menu: a green check means **Can apply** and a red cross means **Cannot apply**. Tooltips and accessible labels explain both choices. The cannot-apply row is muted red and strikes through the circular name. Until the user chooses, the row keeps its original neutral appearance. Selected statuses are stored in `chrome.storage.local` under `circularApplyStatuses` and follow a circular identity derived from its normalized title and first image filename.
 
 Status changes are local immediately. They are included in the existing full-storage Convex backup when the user clicks **Backup**; they do not sync automatically. Locally, statuses are keyed by circular identity. For Convex, `popup.js` serializes the map as an array of `[identity, status]` pairs because Convex object field names must be ASCII and identities may include Bengali characters. **Restore** converts the pairs back to the local map, and the open page reflects the restored values.
 
-The UI is attached inside a Shadow DOM so styles from the webpage do not interfere. The host has the stable ID `__circular-photo-navigator__`; the navigation panel uses `#circular-photo-controls`; generated circular links use IDs like `#circular-jump-1` and `data-testid="circular-jump"`.
+## Convex Capacity Note
+
+The existing manual backup stores the entire extension snapshot, including circular statuses, as one record in the shared Convex `backups` database table. It does not use Convex File Storage. Convex values and documents must be smaller than 1 MiB, so the current design cannot store millions of statuses in one backup record. At a rough 150–250 bytes per status identity/value pair, one million entries would be around 150–250 MB before other extension settings and storage overhead. See [Convex data type limits](https://docs.convex.dev/database/types).
+
+Convex File Storage has no per-file size limit, but its deployment storage quota applies and upload requests have a two-minute timeout. See [Convex limits](https://docs.convex.dev/production/state/limits) and [file upload limits](https://docs.convex.dev/file-storage/upload-files). If status collections ever grow to that scale, redesign backup storage as chunked records or a deliberately managed File Storage snapshot; the current one-document save/restore flow will not scale to it.
+
+The UI is attached inside a Shadow DOM so styles from the webpage do not interfere. The navigation panel and context menu use black surfaces; only status-marked rows use green or muted red. The host has the stable ID `__circular-photo-navigator__`; the navigation panel uses `#circular-photo-controls`; generated circular links use IDs like `#circular-jump-1` and `data-testid="circular-jump"`. The status menu uses `#circular-status-menu`, `#status-can-apply`, and `#status-cannot-apply`.
 
 The extension adds an overlay to the page; it does not change the website’s source or stored content.
 
