@@ -42,6 +42,34 @@
             font-size: 16px;
         }
 
+        .backup-controls {
+            display: flex;
+            gap: 8px;
+            margin: -2px 0 10px;
+            flex-shrink: 0;
+        }
+
+        .backup-btn {
+            flex: 1;
+            border: 1px solid #59427a;
+            border-radius: 4px;
+            padding: 7px 10px;
+            background: #352747;
+            color: #f0e6ff;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background .15s ease, opacity .15s ease;
+        }
+
+        .backup-btn:hover:not(:disabled) { background: #4b3f72; }
+        .backup-btn:disabled { cursor: wait; opacity: .65; }
+        .backup-btn[data-state="success"] { background: #16825d; border-color: #16825d; }
+        .backup-btn[data-state="error"] { background: #7a3030; border-color: #a84545; }
+        #restoreSettings { border-color: #315c78; background: #233d50; color: #d7efff; }
+        #restoreSettings:hover:not(:disabled) { background: #2d5874; }
+
         .script-item {
             display: flex;
             flex-direction: column;
@@ -268,6 +296,11 @@
         <div class="header-icon">⚡</div>
         <div class="header-title">Script Manager</div>
         <div id="statusText" style="margin-left: auto; font-size: 11px; color: #808080;">Loading...</div>
+    </div>
+
+    <div class="backup-controls" id="backupControls" aria-label="Settings backup controls" aria-live="polite">
+        <button id="backupSettings" class="backup-btn" type="button">☁ Backup settings</button>
+        <button id="restoreSettings" class="backup-btn" type="button">↩ Restore settings</button>
     </div>
 
     <div id="scriptList" style="flex: 1; overflow-y: auto; overflow-x: hidden; padding-right: 4px;">

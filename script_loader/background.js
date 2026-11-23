@@ -4,6 +4,53 @@ const DEFAULT_FALLBACK_SETTINGS = {
   mode: 'local'
 };
 
+const CONVEX_URL = 'https://joyous-stingray-672.convex.cloud';
+const CONVEX_EXTENSION_NAME = 'script_loader';
+
+async function convexFetch(type, path, args) {
+  const response = await fetch(`${CONVEX_URL}/api/${type}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ path, args, format: 'json' })
+  });
+
+  if (!response.ok) {
+    const details = await response.text();
+    throw new Error(`Convex HTTP error (${response.status}): ${details}`);
+  }
+
+  const result = await response.json();
+  if (result?.status === 'error' || result?.errorMessage !== undefined) {
+    throw new Error(result.errorMessage || 'Convex returned an error.');
+  }
+  return result.value;
+}
+
+async function saveSettingsToConvex(data) {
+  try {
+    const result = await convexFetch('mutation', 'functions:save', {
+      extensionName: CONVEX_EXTENSION_NAME,
+      data
+    });
+    return { success: true, result };
+  } catch (error) {
+    console.error('[Convex Backup] Save failed:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+async function loadSettingsFromConvex() {
+  try {
+    const data = await convexFetch('query', 'functions:get', {
+      extensionName: CONVEX_EXTENSION_NAME
+    });
+    return { success: true, data };
+  } catch (error) {
+    console.error('[Convex Backup] Restore failed:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 const NEW_TAB_URLS = new Set([
   'chrome://newtab/',
   'chrome://new-tab-page/',
@@ -192,6 +239,16 @@ chrome.commands.onCommand.addListener((command) => {
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message?.action === 'saveToConvex') {
+    saveSettingsToConvex(message.data).then(sendResponse);
+    return true;
+  }
+
+  if (message?.action === 'loadFromConvex') {
+    loadSettingsFromConvex().then(sendResponse);
+    return true;
+  }
+
   if (message?.type === 'LAUNCH_YT_ANALYZER') {
     chrome.runtime.sendNativeMessage(
       'com.delta.yt_analyzer',

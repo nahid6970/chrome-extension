@@ -1,12 +1,105 @@
 document.addEventListener('DOMContentLoaded', () => {
   const scriptListDiv = document.getElementById('scriptList');
   const statusText = document.getElementById('statusText');
+  const backupSettingsButton = document.getElementById('backupSettings');
+  const restoreSettingsButton = document.getElementById('restoreSettings');
   const fallbackScriptPath = 'user_scripts/local_server_fallback.js';
   const defaultFallbackSettings = {
     localServerUrl: 'http://192.168.0.101:5000/',
     siteUrl: 'https://nahid6970.github.io/db/5000_myhome/myhome',
     mode: 'local'
   };
+
+  function setBackupButtonsDisabled(disabled) {
+    backupSettingsButton.disabled = disabled;
+    restoreSettingsButton.disabled = disabled;
+  }
+
+  function showBackupResult(button, text, isError = false) {
+    button.textContent = text;
+    button.dataset.state = isError ? 'error' : 'success';
+    window.setTimeout(() => {
+      button.textContent = button.id === 'backupSettings' ? '☁ Backup settings' : '↩ Restore settings';
+      delete button.dataset.state;
+    }, 2200);
+  }
+
+  backupSettingsButton.addEventListener('click', () => {
+    setBackupButtonsDisabled(true);
+    backupSettingsButton.textContent = '⏳ Backing up…';
+    chrome.storage.local.get(null, (items) => {
+      const storageError = chrome.runtime.lastError;
+      if (storageError) {
+        setBackupButtonsDisabled(false);
+        showBackupResult(backupSettingsButton, '❌ Backup failed', true);
+        console.error('[Convex Backup] Could not read extension storage:', storageError.message);
+        return;
+      }
+
+      chrome.runtime.sendMessage({ action: 'saveToConvex', data: items }, (response) => {
+        const messageError = chrome.runtime.lastError;
+        setBackupButtonsDisabled(false);
+        if (messageError || !response?.success) {
+          showBackupResult(backupSettingsButton, '❌ Backup failed', true);
+          console.error('[Convex Backup] Backup request failed:', messageError?.message || response?.error);
+          return;
+        }
+        showBackupResult(backupSettingsButton, '✅ Backed up');
+      });
+    });
+  });
+
+  restoreSettingsButton.addEventListener('click', () => {
+    setBackupButtonsDisabled(true);
+    restoreSettingsButton.textContent = '⏳ Restoring…';
+    chrome.runtime.sendMessage({ action: 'loadFromConvex' }, (response) => {
+      const messageError = chrome.runtime.lastError;
+      if (messageError || !response?.success || !response.data || typeof response.data !== 'object' || Array.isArray(response.data)) {
+        setBackupButtonsDisabled(false);
+        showBackupResult(restoreSettingsButton, '❌ Restore failed', true);
+        console.error('[Convex Backup] Restore request failed:', messageError?.message || response?.error || 'No backup found.');
+        return;
+      }
+
+      chrome.storage.local.get(null, (currentItems) => {
+        const readError = chrome.runtime.lastError;
+        if (readError) {
+          setBackupButtonsDisabled(false);
+          showBackupResult(restoreSettingsButton, '❌ Restore failed', true);
+          console.error('[Convex Backup] Could not read current extension storage:', readError.message);
+          return;
+        }
+
+        chrome.storage.local.set(response.data, () => {
+          const setError = chrome.runtime.lastError;
+          if (setError) {
+            setBackupButtonsDisabled(false);
+            showBackupResult(restoreSettingsButton, '❌ Restore failed', true);
+            console.error('[Convex Backup] Could not write restored data:', setError.message);
+            return;
+          }
+
+          const removedKeys = Object.keys(currentItems).filter(key => !Object.hasOwn(response.data, key));
+          const finishRestore = (removeError) => {
+            setBackupButtonsDisabled(false);
+            if (removeError) {
+              showBackupResult(restoreSettingsButton, '⚠️ Partly restored', true);
+              console.error('[Convex Backup] Restored backup values but could not remove newer keys:', removeError.message);
+              return;
+            }
+            showBackupResult(restoreSettingsButton, '✅ Restored');
+            loadScriptList();
+          };
+
+          if (removedKeys.length) {
+            chrome.storage.local.remove(removedKeys, () => finishRestore(chrome.runtime.lastError));
+          } else {
+            finishRestore(null);
+          }
+        });
+      });
+    });
+  });
 
   function normalizeSettings(settings = {}) {
     return {

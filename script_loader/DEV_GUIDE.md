@@ -243,6 +243,18 @@ chrome.storage.local.get(['yourSettingKey'], (result) => {
 
 ---
 
+## Convex Settings Backup and Restore
+
+The popup includes manual **Backup settings** and **Restore settings** controls. They save and restore the full `chrome.storage.local` snapshot through the shared Convex deployment documented in `C:\Users\nahid\delta\extension\CONVEX_INTEGRATION_GUIDE.md`.
+
+- Convex request code and the unique backup key (`script_loader`) are in `background.js`.
+- Popup controls and progress/error feedback are in `popup.html` and `popup.js`.
+- `manifest.json` grants the service worker access to `https://*.convex.cloud/*`.
+- Backup uses the shared `functions:save` mutation; restore uses `functions:get`.
+- Restore writes the saved snapshot and removes local keys absent from that snapshot, so the local storage matches the backup. It first writes the snapshot before removing newer keys to reduce the chance of losing local settings if writing fails.
+- This is manual backup/restore; local changes are not automatically synced to Convex.
+- If the shared deployment URL or backend API changes, update `CONVEX_URL` and the call paths in `background.js` to match the shared backend source of truth.
+
 ## Key Extension Concepts
 
 | Concept | Where |

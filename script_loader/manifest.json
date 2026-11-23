@@ -11,7 +11,8 @@
     "nativeMessaging"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "<all_urls>",
+    "https://*.convex.cloud/*"
   ],
   "content_scripts": [
     {
