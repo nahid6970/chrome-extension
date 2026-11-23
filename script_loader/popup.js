@@ -1,8 +1,11 @@
 document.addEventListener('DOMContentLoaded', () => {
   const scriptListDiv = document.getElementById('scriptList');
   const statusText = document.getElementById('statusText');
+  const scriptSearchInput = document.getElementById('scriptSearch');
   const backupSettingsButton = document.getElementById('backupSettings');
   const restoreSettingsButton = document.getElementById('restoreSettings');
+  let latestEnabledScripts = {};
+  let latestTotalScripts = 0;
   const fallbackScriptPath = 'user_scripts/local_server_fallback.js';
   const defaultFallbackSettings = {
     localServerUrl: 'http://192.168.0.101:5000/',
@@ -19,7 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     button.textContent = text;
     button.dataset.state = isError ? 'error' : 'success';
     window.setTimeout(() => {
-      button.textContent = button.id === 'backupSettings' ? '☁ Backup settings' : '↩ Restore settings';
+      button.textContent = button.id === 'backupSettings' ? '☁ Backup' : '↩ Restore';
       delete button.dataset.state;
     }, 2200);
   }
@@ -31,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const storageError = chrome.runtime.lastError;
       if (storageError) {
         setBackupButtonsDisabled(false);
-        showBackupResult(backupSettingsButton, '❌ Backup failed', true);
+        showBackupResult(backupSettingsButton, '❌ Failed', true);
         console.error('[Convex Backup] Could not read extension storage:', storageError.message);
         return;
       }
@@ -40,11 +43,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const messageError = chrome.runtime.lastError;
         setBackupButtonsDisabled(false);
         if (messageError || !response?.success) {
-          showBackupResult(backupSettingsButton, '❌ Backup failed', true);
+          showBackupResult(backupSettingsButton, '❌ Failed', true);
           console.error('[Convex Backup] Backup request failed:', messageError?.message || response?.error);
           return;
         }
-        showBackupResult(backupSettingsButton, '✅ Backed up');
+        showBackupResult(backupSettingsButton, '✅ Done');
       });
     });
   });
@@ -56,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const messageError = chrome.runtime.lastError;
       if (messageError || !response?.success || !response.data || typeof response.data !== 'object' || Array.isArray(response.data)) {
         setBackupButtonsDisabled(false);
-        showBackupResult(restoreSettingsButton, '❌ Restore failed', true);
+        showBackupResult(restoreSettingsButton, '❌ Failed', true);
         console.error('[Convex Backup] Restore request failed:', messageError?.message || response?.error || 'No backup found.');
         return;
       }
@@ -65,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const readError = chrome.runtime.lastError;
         if (readError) {
           setBackupButtonsDisabled(false);
-          showBackupResult(restoreSettingsButton, '❌ Restore failed', true);
+          showBackupResult(restoreSettingsButton, '❌ Failed', true);
           console.error('[Convex Backup] Could not read current extension storage:', readError.message);
           return;
         }
@@ -74,7 +77,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const setError = chrome.runtime.lastError;
           if (setError) {
             setBackupButtonsDisabled(false);
-            showBackupResult(restoreSettingsButton, '❌ Restore failed', true);
+            showBackupResult(restoreSettingsButton, '❌ Failed', true);
             console.error('[Convex Backup] Could not write restored data:', setError.message);
             return;
           }
@@ -83,11 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
           const finishRestore = (removeError) => {
             setBackupButtonsDisabled(false);
             if (removeError) {
-              showBackupResult(restoreSettingsButton, '⚠️ Partly restored', true);
+              showBackupResult(restoreSettingsButton, '⚠️ Partial', true);
               console.error('[Convex Backup] Restored backup values but could not remove newer keys:', removeError.message);
               return;
             }
-            showBackupResult(restoreSettingsButton, '✅ Restored');
+            showBackupResult(restoreSettingsButton, '✅ Done');
             loadScriptList();
           };
 
@@ -339,9 +342,29 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function updateStatus(enabledScripts, totalScripts) {
+    latestEnabledScripts = enabledScripts;
+    latestTotalScripts = totalScripts;
     const enabledCount = Object.values(enabledScripts).filter(Boolean).length;
-    statusText.textContent = `${enabledCount}/${totalScripts} script${totalScripts !== 1 ? 's' : ''} enabled`;
+    const query = scriptSearchInput.value.trim().toLocaleLowerCase();
+    let visibleCount = 0;
+    scriptListDiv.querySelectorAll('.script-item').forEach(scriptItem => {
+      const settingValues = Array.from(scriptItem.querySelectorAll('input, textarea, select'))
+        .map(input => input.value || '')
+        .join(' ');
+      const searchableText = `${scriptItem.textContent} ${settingValues} ${scriptItem.dataset.scriptPath}`.toLocaleLowerCase();
+      const matches = !query || searchableText.includes(query);
+      scriptItem.style.display = matches ? '' : 'none';
+      if (matches) visibleCount += 1;
+    });
+
+    statusText.textContent = query
+      ? `${visibleCount}/${totalScripts} shown · ${enabledCount}/${totalScripts} enabled`
+      : `${enabledCount}/${totalScripts} script${totalScripts !== 1 ? 's' : ''} enabled`;
   }
+
+  scriptSearchInput.addEventListener('input', () => {
+    updateStatus(latestEnabledScripts, latestTotalScripts);
+  });
 
   function toggleScript(scriptPath, currentState) {
     const newState = !currentState;

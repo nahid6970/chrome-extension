@@ -249,6 +249,7 @@ The popup includes manual **Backup settings** and **Restore settings** controls.
 
 - Convex request code and the unique backup key (`script_loader`) are in `background.js`.
 - Popup controls and progress/error feedback are in `popup.html` and `popup.js`.
+- The popup toolbar search filters script cards by name, description, path, settings labels, and current field values.
 - `manifest.json` grants the service worker access to `https://*.convex.cloud/*`.
 - Backup uses the shared `functions:save` mutation; restore uses `functions:get`.
 - Restore writes the saved snapshot and removes local keys absent from that snapshot, so the local storage matches the backup. It first writes the snapshot before removing newer keys to reduce the chance of losing local settings if writing fails.
