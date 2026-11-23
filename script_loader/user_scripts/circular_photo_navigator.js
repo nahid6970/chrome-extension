@@ -276,8 +276,8 @@
           padding: 8px;
           border: 1px solid rgba(255,255,255,.2);
           border-radius: 10px;
-          background: rgba(24, 28, 34, .92);
-          box-shadow: 0 3px 14px rgba(0,0,0,.35);
+          background: rgba(16, 18, 22, .96);
+          box-shadow: 0 5px 18px rgba(0,0,0,.48);
           pointer-events: auto;
           backdrop-filter: blur(8px);
         }
@@ -321,8 +321,8 @@
           padding: 6px;
           border: 1px solid rgba(255,255,255,.22);
           border-radius: 8px;
-          background: #202329;
-          box-shadow: 0 8px 24px rgba(0,0,0,.55);
+          background: rgba(22, 24, 28, .98);
+          box-shadow: 0 8px 24px rgba(0,0,0,.6);
           color: #f3f6fa;
           font: 12px/1.4 system-ui, sans-serif;
           pointer-events: auto;
