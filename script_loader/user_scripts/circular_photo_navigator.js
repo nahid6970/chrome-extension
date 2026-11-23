@@ -303,9 +303,7 @@
         .circular-item[data-status="unmarked"]:hover { background: rgba(22,119,200,.42); }
         .circular-item[data-status="unmarked"][aria-current="location"] { background: #1677c8; color: white; }
         .circular-item[data-status="can-apply"] { background: #16452f; color: #e0ffec; }
-        .circular-item[data-status="can-apply"]::before { content: "●"; flex: 0 0 12px; margin-right: 7px; color: #48d181; }
         .circular-item[data-status="cannot-apply"] { background: #4b292c; color: #f1c9cb; }
-        .circular-item[data-status="cannot-apply"]::before { content: "●"; flex: 0 0 12px; margin-right: 7px; color: #e27b80; }
         .circular-item[data-status="cannot-apply"] .circular-label { text-decoration: line-through; text-decoration-thickness: 1px; }
         .circular-item[data-status="can-apply"]:hover,
         .circular-item[data-status="cannot-apply"]:hover { filter: brightness(1.2); }
