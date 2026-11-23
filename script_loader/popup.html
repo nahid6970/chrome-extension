@@ -80,7 +80,12 @@
             font-size: 10px;
             text-align: right;
             flex-shrink: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
+
+        #statusText[data-state="error"] { color: #ff8d8d; text-align: left; }
 
         .script-item {
             display: flex;

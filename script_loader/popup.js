@@ -18,13 +18,52 @@ document.addEventListener('DOMContentLoaded', () => {
     restoreSettingsButton.disabled = disabled;
   }
 
-  function showBackupResult(button, text, isError = false) {
+  function showBackupResult(button, text, isError = false, detail = '') {
     button.textContent = text;
     button.dataset.state = isError ? 'error' : 'success';
+    if (detail) {
+      button.title = detail;
+      statusText.textContent = detail;
+      statusText.title = detail;
+      statusText.dataset.state = 'error';
+    } else {
+      button.title = button.id === 'backupSettings'
+        ? 'Back up all extension settings'
+        : 'Restore all extension settings';
+      statusText.removeAttribute('title');
+      delete statusText.dataset.state;
+      updateStatus(latestEnabledScripts, latestTotalScripts);
+    }
     window.setTimeout(() => {
       button.textContent = button.id === 'backupSettings' ? '☁ Backup' : '↩ Restore';
       delete button.dataset.state;
     }, 2200);
+  }
+
+  function encodeStorageSnapshotForConvex(items) {
+    const snapshot = { ...items };
+    const statuses = snapshot.circularApplyStatuses;
+    if (statuses && typeof statuses === 'object' && !Array.isArray(statuses)) {
+      // Convex object field names must be ASCII. Circular identities may contain Bengali text,
+      // so store this one map as [identity, status] pairs in the backup document.
+      snapshot.circularApplyStatuses = Object.entries(statuses);
+    }
+    return snapshot;
+  }
+
+  function decodeStorageSnapshotFromConvex(data) {
+    const snapshot = { ...data };
+    if (Array.isArray(snapshot.circularApplyStatuses)) {
+      snapshot.circularApplyStatuses = Object.fromEntries(
+        snapshot.circularApplyStatuses.filter(entry =>
+          Array.isArray(entry)
+          && entry.length === 2
+          && typeof entry[0] === 'string'
+          && ['can-apply', 'cannot-apply'].includes(entry[1])
+        )
+      );
+    }
+    return snapshot;
   }
 
   backupSettingsButton.addEventListener('click', () => {
@@ -34,17 +73,19 @@ document.addEventListener('DOMContentLoaded', () => {
       const storageError = chrome.runtime.lastError;
       if (storageError) {
         setBackupButtonsDisabled(false);
-        showBackupResult(backupSettingsButton, '❌ Failed', true);
+        showBackupResult(backupSettingsButton, '❌ Failed', true, storageError.message);
         console.error('[Convex Backup] Could not read extension storage:', storageError.message);
         return;
       }
 
-      chrome.runtime.sendMessage({ action: 'saveToConvex', data: items }, (response) => {
+      const snapshot = encodeStorageSnapshotForConvex(items);
+      chrome.runtime.sendMessage({ action: 'saveToConvex', data: snapshot }, (response) => {
         const messageError = chrome.runtime.lastError;
         setBackupButtonsDisabled(false);
         if (messageError || !response?.success) {
-          showBackupResult(backupSettingsButton, '❌ Failed', true);
-          console.error('[Convex Backup] Backup request failed:', messageError?.message || response?.error);
+          const errorMessage = messageError?.message || response?.error || 'Convex did not confirm the backup.';
+          showBackupResult(backupSettingsButton, '❌ Failed', true, errorMessage);
+          console.error('[Convex Backup] Backup request failed:', errorMessage);
           return;
         }
         showBackupResult(backupSettingsButton, '✅ Done');
@@ -59,34 +100,37 @@ document.addEventListener('DOMContentLoaded', () => {
       const messageError = chrome.runtime.lastError;
       if (messageError || !response?.success || !response.data || typeof response.data !== 'object' || Array.isArray(response.data)) {
         setBackupButtonsDisabled(false);
-        showBackupResult(restoreSettingsButton, '❌ Failed', true);
-        console.error('[Convex Backup] Restore request failed:', messageError?.message || response?.error || 'No backup found.');
+        const errorMessage = messageError?.message || response?.error || 'No backup found.';
+        showBackupResult(restoreSettingsButton, '❌ Failed', true, errorMessage);
+        console.error('[Convex Backup] Restore request failed:', errorMessage);
         return;
       }
+
+      const restoredItems = decodeStorageSnapshotFromConvex(response.data);
 
       chrome.storage.local.get(null, (currentItems) => {
         const readError = chrome.runtime.lastError;
         if (readError) {
           setBackupButtonsDisabled(false);
-          showBackupResult(restoreSettingsButton, '❌ Failed', true);
+          showBackupResult(restoreSettingsButton, '❌ Failed', true, readError.message);
           console.error('[Convex Backup] Could not read current extension storage:', readError.message);
           return;
         }
 
-        chrome.storage.local.set(response.data, () => {
+        chrome.storage.local.set(restoredItems, () => {
           const setError = chrome.runtime.lastError;
           if (setError) {
             setBackupButtonsDisabled(false);
-            showBackupResult(restoreSettingsButton, '❌ Failed', true);
+            showBackupResult(restoreSettingsButton, '❌ Failed', true, setError.message);
             console.error('[Convex Backup] Could not write restored data:', setError.message);
             return;
           }
 
-          const removedKeys = Object.keys(currentItems).filter(key => !Object.hasOwn(response.data, key));
+          const removedKeys = Object.keys(currentItems).filter(key => !Object.hasOwn(restoredItems, key));
           const finishRestore = (removeError) => {
             setBackupButtonsDisabled(false);
             if (removeError) {
-              showBackupResult(restoreSettingsButton, '⚠️ Partial', true);
+              showBackupResult(restoreSettingsButton, '⚠️ Partial', true, removeError.message);
               console.error('[Convex Backup] Restored backup values but could not remove newer keys:', removeError.message);
               return;
             }

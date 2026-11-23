@@ -36,7 +36,7 @@ The script:
 6. Watches for page changes so dynamically inserted or removed photos can update the list.
 7. Lets the user right-click a circular name and choose **Can apply** (green) or **Cannot apply** (gray, with the name struck through). Until the user chooses, the row keeps its original neutral appearance. Selected statuses are stored in `chrome.storage.local` under `circularApplyStatuses` and follow a circular identity derived from its normalized title and first image filename.
 
-Status changes are local immediately. They are included in the existing full-storage Convex backup when the user clicks **Backup**; they do not sync automatically. **Restore** updates local status data and the open page reflects the restored values.
+Status changes are local immediately. They are included in the existing full-storage Convex backup when the user clicks **Backup**; they do not sync automatically. Locally, statuses are keyed by circular identity. For Convex, `popup.js` serializes the map as an array of `[identity, status]` pairs because Convex object field names must be ASCII and identities may include Bengali characters. **Restore** converts the pairs back to the local map, and the open page reflects the restored values.
 
 The UI is attached inside a Shadow DOM so styles from the webpage do not interfere. The host has the stable ID `__circular-photo-navigator__`; the navigation panel uses `#circular-photo-controls`; generated circular links use IDs like `#circular-jump-1` and `data-testid="circular-jump"`.
 
