@@ -304,8 +304,8 @@
         .circular-item[data-status="unmarked"][aria-current="location"] { background: #1677c8; color: white; }
         .circular-item[data-status="can-apply"] { background: #16452f; color: #e0ffec; }
         .circular-item[data-status="can-apply"]::before { content: "●"; flex: 0 0 12px; margin-right: 7px; color: #48d181; }
-        .circular-item[data-status="cannot-apply"] { background: #3d3f42; color: #c2c4c7; }
-        .circular-item[data-status="cannot-apply"]::before { content: "●"; flex: 0 0 12px; margin-right: 7px; color: #92969b; }
+        .circular-item[data-status="cannot-apply"] { background: #4b292c; color: #f1c9cb; }
+        .circular-item[data-status="cannot-apply"]::before { content: "●"; flex: 0 0 12px; margin-right: 7px; color: #e27b80; }
         .circular-item[data-status="cannot-apply"] .circular-label { text-decoration: line-through; text-decoration-thickness: 1px; }
         .circular-item[data-status="can-apply"]:hover,
         .circular-item[data-status="cannot-apply"]:hover { filter: brightness(1.2); }
@@ -340,7 +340,7 @@
         .status-choice:hover, .status-choice[aria-checked="true"] { background: rgba(255,255,255,.12); }
         .status-choice:focus-visible { outline: 2px solid #75baff; }
         .status-choice[data-status="can-apply"] { color: #67df98; }
-        .status-choice[data-status="cannot-apply"] { color: #c3c5c8; }
+        .status-choice[data-status="cannot-apply"] { color: #f09a9f; }
       </style>
       <nav class="controls" id="circular-photo-controls" aria-label="Job circulars">
         <div class="circular-list" id="circular-name-list"></div>

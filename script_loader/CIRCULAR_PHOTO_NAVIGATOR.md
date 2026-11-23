@@ -34,7 +34,7 @@ The script:
 4. Adds a fixed, always-visible list at the right center of the page. Each row uses the circular heading as its name. Clicking a row scrolls smoothly to that circular’s first image.
 5. Highlights the circular whose photo is nearest the viewport center as the reader scrolls.
 6. Watches for page changes so dynamically inserted or removed photos can update the list.
-7. Lets the user right-click a circular name and choose **Can apply** (green) or **Cannot apply** (gray, with the name struck through). Until the user chooses, the row keeps its original neutral appearance. Selected statuses are stored in `chrome.storage.local` under `circularApplyStatuses` and follow a circular identity derived from its normalized title and first image filename.
+7. Lets the user right-click a circular name and choose **Can apply** (green) or **Cannot apply** (muted red, with the name struck through). Until the user chooses, the row keeps its original neutral appearance. Selected statuses are stored in `chrome.storage.local` under `circularApplyStatuses` and follow a circular identity derived from its normalized title and first image filename.
 
 Status changes are local immediately. They are included in the existing full-storage Convex backup when the user clicks **Backup**; they do not sync automatically. Locally, statuses are keyed by circular identity. For Convex, `popup.js` serializes the map as an array of `[identity, status]` pairs because Convex object field names must be ASCII and identities may include Bengali characters. **Restore** converts the pairs back to the local map, and the open page reflects the restored values.
 
