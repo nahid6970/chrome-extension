@@ -17,6 +17,8 @@ script_loader/
 ├── background.js           # Service worker: tab injection, native messaging, message routing
 ├── popup.html              # Popup UI styles
 ├── popup.js                # Popup logic: script list, toggles, settings panels
+├── circular_status_manager.html  # Full-page saved circular status manager
+├── circular_status_manager.js    # Search and remove saved circular statuses
 ├── page_bridge.js          # Content script injected on every page (for page↔extension comms)
 ├── user_scripts/           # Drop .js files here — they auto-appear in the popup
 │   ├── yt_analyzer.js      # F9 hotkey → launches Python GUI
@@ -250,6 +252,7 @@ The popup includes manual **Backup settings** and **Restore settings** controls.
 - Convex request code and the unique backup key (`script_loader`) are in `background.js`.
 - Popup controls and progress/error feedback are in `popup.html` and `popup.js`.
 - The popup toolbar search filters script cards by name, description, path, settings labels, and current field values.
+- A **STATUS** button beside the Circular Photo Navigator ON/OFF control opens `circular_status_manager.html` in a full browser tab. The manager can search all saved entries, remove them individually, or clear all after confirmation. Changes stay local until the next manual Convex backup.
 - Circular application status is stored under `circularApplyStatuses` in `chrome.storage.local`; it is included in manual full-storage backups, with no automatic Convex sync. The popup serializes this map as `[identity, status]` pairs for Convex because circular identities can contain Bengali characters, then converts it back to an object on restore. On the circular page, right-click an item to open a compact horizontal menu with icon-only green-check **Can apply** and red-cross **Cannot apply** choices. Unmarked rows keep their original appearance; cannot-apply rows are muted red with a strike-through. The list panel and menu have black surfaces.
 - `manifest.json` grants the service worker access to `https://*.convex.cloud/*`.
 - Backup uses the shared `functions:save` mutation; restore uses `functions:get`.

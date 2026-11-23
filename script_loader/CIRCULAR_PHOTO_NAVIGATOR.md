@@ -38,6 +38,8 @@ The script:
 
 Status changes are local immediately. They are included in the existing full-storage Convex backup when the user clicks **Backup**; they do not sync automatically. Locally, statuses are keyed by circular identity. For Convex, `popup.js` serializes the map as an array of `[identity, status]` pairs because Convex object field names must be ASCII and identities may include Bengali characters. **Restore** converts the pairs back to the local map, and the open page reflects the restored values.
 
+The extension popup places a **STATUS** management button beside the Circular Photo Navigator ON/OFF control. It opens `circular_status_manager.html` in a full browser tab. The manager lists all saved status entries, supports search, removes entries individually, and has a confirmed **Clear all** action. These edits update local storage immediately and are uploaded to Convex only on the next manual **Backup**.
+
 ## Convex Capacity Note
 
 The existing manual backup stores the entire extension snapshot, including circular statuses, as one record in the shared Convex `backups` database table. It does not use Convex File Storage. Convex values and documents must be smaller than 1 MiB, so the current design cannot store millions of statuses in one backup record. At a rough 150–250 bytes per status identity/value pair, one million entries would be around 150–250 MB before other extension settings and storage overhead. See [Convex data type limits](https://docs.convex.dev/database/types).

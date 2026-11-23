@@ -40,6 +40,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2200);
   }
 
+  function openCircularStatusManager() {
+    const managerUrl = chrome.runtime.getURL('circular_status_manager.html');
+    chrome.tabs.query({ url: managerUrl }, (tabs) => {
+      const existingTab = tabs.find(tab => Number.isInteger(tab.id));
+      if (existingTab) {
+        chrome.tabs.update(existingTab.id, { active: true });
+      } else {
+        chrome.tabs.create({ url: managerUrl });
+      }
+    });
+  }
+
   function encodeStorageSnapshotForConvex(items) {
     const snapshot = { ...items };
     const statuses = snapshot.circularApplyStatuses;
@@ -252,6 +264,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const isYtAnalyzer = scriptPath === 'user_scripts/yt_analyzer.js';
     const isElementHider = scriptPath === 'user_scripts/element_hider.js';
     const isVisibleCursor = scriptPath === 'user_scripts/force_visible_cursor.js';
+    const isCircularNavigator = scriptPath === 'user_scripts/circular_photo_navigator.js';
     
     const modeLabels = {
       local: 'LOCAL',
@@ -276,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
         <div class="script-actions">
           ${(isFallbackScript || isWhitelistScript || isYtAnalyzer || isElementHider || isVisibleCursor) ? `<button class="settings-btn" data-script="${scriptPath}" aria-expanded="false">SET</button>` : ''}
           ${isFallbackScript ? `<button class="mode-btn ${fallbackSettings.mode}" data-script="${scriptPath}">${modeLabel}</button>` : ''}
+          ${isCircularNavigator ? '<button id="manageCircularStatuses" class="settings-btn" type="button" title="Manage saved circular statuses">STATUS</button>' : ''}
           <button class="toggle-btn ${isEnabled ? 'active' : 'inactive'}" data-script="${scriptPath}">
             ${isEnabled ? 'ON' : 'OFF'}
           </button>
@@ -755,6 +769,11 @@ document.addEventListener('DOMContentLoaded', () => {
           toggleBtn.addEventListener('click', () => {
             toggleScript(scriptPath, isEnabled);
           });
+
+          const manageStatusesButton = scriptItem.querySelector('#manageCircularStatuses');
+          if (manageStatusesButton) {
+            manageStatusesButton.addEventListener('click', openCircularStatusManager);
+          }
 
           attachSettingsHandlers(scriptItem, fallbackSettings, domainWhitelist, cursorTargets, cursorSites, currentHost);
           

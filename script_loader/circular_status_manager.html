@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Saved Circular Statuses</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: 'JetBrains Mono', Consolas, monospace;
+      background: #111214;
+      color: #ededed;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      background: radial-gradient(ellipse at top, #202226 0, #111214 58%);
+    }
+
+    #status-manager-shell {
+      width: min(100%, 1080px);
+      min-height: 100vh;
+      margin: 0 auto;
+      padding: 36px 28px 48px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    #status-manager-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid #36383d;
+    }
+
+    #status-manager-title { margin: 0; font-size: clamp(20px, 3vw, 28px); }
+    #status-manager-description { margin: 8px 0 0; color: #a7abb2; font-size: 13px; }
+    #status-manager-count { color: #9ebfdb; font-size: 12px; white-space: nowrap; }
+
+    #status-manager-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    #status-search {
+      flex: 1;
+      min-width: 160px;
+      height: 40px;
+      padding: 9px 12px;
+      border: 1px solid #45484e;
+      border-radius: 6px;
+      background: #1c1e22;
+      color: #f0f0f0;
+      font: inherit;
+      font-size: 13px;
+    }
+
+    #status-search:focus { outline: 2px solid #458bc0; outline-offset: 1px; }
+
+    .manager-button {
+      min-height: 38px;
+      padding: 8px 12px;
+      border: 1px solid #484b51;
+      border-radius: 6px;
+      background: #282a2f;
+      color: #eee;
+      font: inherit;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .manager-button:hover:not(:disabled) { background: #34373d; }
+    .manager-button:focus-visible { outline: 2px solid #75baff; outline-offset: 2px; }
+    .manager-button:disabled { cursor: default; opacity: .5; }
+
+    #clear-all-statuses { border-color: #754246; background: #3b2225; color: #ffc5c8; }
+    #clear-all-statuses:hover:not(:disabled) { background: #512a2e; }
+    #close-status-manager { min-width: 40px; font-size: 18px; }
+
+    #status-manager-message {
+      min-height: 18px;
+      color: #a7abb2;
+      font-size: 12px;
+    }
+
+    #status-manager-message[data-state="error"] { color: #ff9a9f; }
+    #status-manager-message[data-state="success"] { color: #7de0a0; }
+
+    #saved-status-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr));
+      align-content: start;
+      gap: 10px;
+    }
+
+    .saved-status-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      min-height: 76px;
+      padding: 14px 16px;
+      border: 1px solid #35373c;
+      border-left: 3px solid #52d889;
+      border-radius: 8px;
+      background: #202226;
+    }
+
+    .saved-status-card[data-status="cannot-apply"] {
+      border-left-color: #e27b80;
+      background: #2b2022;
+    }
+
+    .saved-status-details { flex: 1; min-width: 0; }
+    .saved-status-name { margin: 0; font-size: 14px; line-height: 1.5; overflow-wrap: anywhere; }
+    .saved-status-identity { margin: 5px 0 0; color: #8b9098; font-size: 10px; overflow-wrap: anywhere; }
+    .saved-status-badge { flex: 0 0 auto; font-size: 11px; white-space: nowrap; }
+    .saved-status-card[data-status="cannot-apply"] .saved-status-badge { color: #f09a9f; text-decoration: line-through; }
+    .saved-status-card[data-status="can-apply"] .saved-status-badge { color: #70dc98; }
+    .remove-saved-status { flex: 0 0 auto; border-color: #594247; color: #ffb7bb; }
+    .remove-saved-status:hover:not(:disabled) { background: #48282c; }
+
+    #status-empty-state {
+      grid-column: 1 / -1;
+      padding: 42px 20px;
+      border: 1px dashed #44474d;
+      border-radius: 8px;
+      color: #a7abb2;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 620px) {
+      #status-manager-shell { padding: 22px 14px 34px; }
+      #status-manager-header { align-items: flex-start; }
+      #status-manager-toolbar { flex-wrap: wrap; }
+      #status-search { flex-basis: 100%; }
+      #clear-all-statuses { flex: 1; }
+      .saved-status-card { flex-wrap: wrap; }
+      .saved-status-details { flex-basis: calc(100% - 24px); }
+      .saved-status-badge { margin-left: 24px; }
+    }
+  </style>
+</head>
+<body id="status-manager-page">
+  <main id="status-manager-shell">
+    <header id="status-manager-header">
+      <div id="status-manager-heading-group">
+        <h1 id="status-manager-title">Saved Circular Statuses</h1>
+        <p id="status-manager-description">Manage the application status you set for each job circular.</p>
+      </div>
+      <div id="status-manager-count" role="status" aria-live="polite">Loading…</div>
+    </header>
+
+    <section id="status-manager-toolbar" aria-label="Saved status controls">
+      <input id="status-search" type="search" placeholder="Search saved circulars…" autocomplete="off" aria-label="Search saved circular statuses">
+      <button id="clear-all-statuses" class="manager-button" type="button">Clear all</button>
+      <button id="close-status-manager" class="manager-button" type="button" title="Close status manager" aria-label="Close status manager">×</button>
+    </section>
+
+    <div id="status-manager-message" role="status" aria-live="polite"></div>
+    <section id="saved-status-list" aria-label="Saved circular statuses"></section>
+  </main>
+  <script src="circular_status_manager.js"></script>
+</body>
+</html>
