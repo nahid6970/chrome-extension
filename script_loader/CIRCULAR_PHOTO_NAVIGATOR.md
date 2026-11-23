@@ -34,6 +34,9 @@ The script:
 4. Adds a fixed, always-visible list at the right center of the page. Each row uses the circular heading as its name. Clicking a row scrolls smoothly to that circular’s first image.
 5. Highlights the circular whose photo is nearest the viewport center as the reader scrolls.
 6. Watches for page changes so dynamically inserted or removed photos can update the list.
+7. Lets the user right-click a circular name and choose **Can apply** (green) or **Cannot apply** (gray, with the name struck through). Until the user chooses, the row keeps its original neutral appearance. Selected statuses are stored in `chrome.storage.local` under `circularApplyStatuses` and follow a circular identity derived from its normalized title and first image filename.
+
+Status changes are local immediately. They are included in the existing full-storage Convex backup when the user clicks **Backup**; they do not sync automatically. **Restore** updates local status data and the open page reflects the restored values.
 
 The UI is attached inside a Shadow DOM so styles from the webpage do not interfere. The host has the stable ID `__circular-photo-navigator__`; the navigation panel uses `#circular-photo-controls`; generated circular links use IDs like `#circular-jump-1` and `data-testid="circular-jump"`.
 
