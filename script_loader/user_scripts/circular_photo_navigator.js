@@ -202,8 +202,8 @@
   function openStatusMenu(statusKey, clientX, clientY) {
     if (!statusMenu) return;
     pendingStatusKey = statusKey;
-    const maxLeft = Math.max(8, window.innerWidth - 196);
-    const maxTop = Math.max(8, window.innerHeight - 112);
+    const maxLeft = Math.max(8, window.innerWidth - 104);
+    const maxTop = Math.max(8, window.innerHeight - 56);
     statusMenu.style.left = `${Math.min(Math.max(8, clientX), maxLeft)}px`;
     statusMenu.style.top = `${Math.min(Math.max(8, clientY), maxTop)}px`;
     statusMenu.hidden = false;
@@ -317,7 +317,9 @@
         #circular-status-menu {
           position: fixed;
           z-index: 10;
-          width: 180px;
+          display: flex;
+          gap: 5px;
+          width: max-content;
           padding: 6px;
           border: 1px solid rgba(255,255,255,.22);
           border-radius: 8px;
@@ -330,24 +332,27 @@
         #circular-status-menu[hidden] { display: none; }
         .status-choice {
           all: unset;
-          display: block;
+          display: flex;
+          align-items: center;
+          justify-content: center;
           box-sizing: border-box;
-          width: 100%;
-          padding: 8px 9px;
-          border-radius: 5px;
+          width: 34px;
+          height: 34px;
+          border-radius: 50%;
           cursor: pointer;
+          font: 700 19px/1 system-ui, sans-serif;
         }
-        .status-choice:hover, .status-choice[aria-checked="true"] { background: rgba(255,255,255,.12); }
+        .status-choice:hover, .status-choice[aria-checked="true"] { background: rgba(255,255,255,.14); }
         .status-choice:focus-visible { outline: 2px solid #75baff; }
-        .status-choice[data-status="can-apply"] { color: #67df98; }
-        .status-choice[data-status="cannot-apply"] { color: #f09a9f; }
+        .status-choice[data-status="can-apply"] { color: #67df98; background-color: rgba(42,126,75,.22); }
+        .status-choice[data-status="cannot-apply"] { color: #f09a9f; background-color: rgba(142,53,59,.24); }
       </style>
       <nav class="controls" id="circular-photo-controls" aria-label="Job circulars">
         <div class="circular-list" id="circular-name-list"></div>
       </nav>
       <div id="circular-status-menu" role="menu" aria-label="Set application status" hidden>
-        <button class="status-choice" id="status-can-apply" type="button" role="menuitemradio" aria-checked="false" data-status="can-apply">🟢 Can apply</button>
-        <button class="status-choice" id="status-cannot-apply" type="button" role="menuitemradio" aria-checked="false" data-status="cannot-apply">⚪ Cannot apply</button>
+        <button class="status-choice" id="status-can-apply" type="button" role="menuitemradio" aria-label="Can apply" title="Can apply" aria-checked="false" data-status="can-apply">✓</button>
+        <button class="status-choice" id="status-cannot-apply" type="button" role="menuitemradio" aria-label="Cannot apply" title="Cannot apply" aria-checked="false" data-status="cannot-apply">×</button>
       </div>
     `;
 
